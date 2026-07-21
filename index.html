@@ -345,12 +345,13 @@
     .compact-multiselect > summary:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,.12); }
     .compact-multiselect[open] > summary { border-color: #3b82f6; }
     .compact-multiselect-menu {
-      position: absolute;
-      z-index: 70;
-      top: calc(100% + .35rem);
-      left: 0;
-      width: 100%;
-      max-height: 15rem;
+      position: fixed;
+      z-index: 9999;
+      top: var(--menu-top, 0);
+      left: var(--menu-left, 0);
+      width: var(--menu-width, 16rem);
+      max-width: calc(100vw - 1rem);
+      max-height: min(20rem, calc(100vh - 1rem));
       overflow: auto;
       border: 1px solid #cbd5e1;
       border-radius: .65rem;
@@ -368,6 +369,36 @@
     html.dark .compact-multiselect-option { color:#cbd5e1; }
     html.dark .compact-multiselect-option:hover { background:rgba(37,99,235,.2); color:#bfdbfe; }
     html.dark .compact-multiselect-actions { border-color:#334155; }
+
+
+
+    /* Ajuste automático para cualquier tamaño de pantalla. */
+    #dashboardLayout { overflow-x: clip; }
+    #dashboardWorkspace { align-items: start; }
+    #controlSidebar, #dashboardMain, #dashboardExportArea { min-width: 0; }
+    header .flex { min-width: 0; }
+
+    @media (min-width: 1024px) {
+      #dashboardWorkspace { grid-template-columns: clamp(15rem, 19vw, 19rem) minmax(0, 1fr); }
+    }
+
+    @media (max-width: 1023px) {
+      #dashboardWorkspace { grid-template-columns: minmax(0, 1fr); }
+      #controlSidebar { position: static !important; max-height: none !important; overflow: visible !important; padding-right: 0 !important; }
+      #controlSidebar .panel { overflow: visible; }
+      #controlSidebar .space-y-3 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+      #controlSidebar .space-y-3 > .flex,
+      #controlSidebar .space-y-3 > p,
+      #controlSidebar .space-y-3 > .grid { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 640px) {
+      #dashboardLayout { padding-left: .5rem !important; padding-right: .5rem !important; }
+      #controlSidebar .space-y-3 { grid-template-columns: minmax(0, 1fr); }
+      #topActions { width: 100%; justify-content: stretch; }
+      #topActions > * { flex: 1 1 auto; }
+      .compact-multiselect-menu { max-width: calc(100vw - .75rem); }
+    }
 
     @media (max-width: 768px) {
       .chart-wrap, .chart-wrap.tall { height: 17rem; }
@@ -415,7 +446,7 @@
             <span id="themeToggleText">Modo oscuro</span>
           </button>
           <div id="systemStatus" class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm">
-            <span class="status-dot"></span><span id="statusText">Esperando archivo</span>
+            <span class="status-dot"></span><span id="statusText">Preparando datos</span>
           </div>
         </div>
       </div>
@@ -439,29 +470,12 @@
                 <h2 class="text-sm font-semibold text-slate-800">Panel de control</h2>
                 <button id="hideSidebarButton" type="button" class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 hover:border-blue-300 hover:text-blue-700">Ocultar</button>
               </div>
-              <p class="mt-0.5 text-[11px] text-slate-500">Carga y filtra la información.</p>
+              <p class="mt-0.5 text-[11px] text-slate-500">Filtra y consulta la información.</p>
             </div>
           </div>
         </div>
 
         <div class="space-y-4 p-4">
-          <div id="dropZone" class="drop-zone rounded-lg bg-slate-50 p-2">
-            <div class="space-y-1.5">
-              <div class="min-w-0">
-                <p class="text-sm font-semibold text-slate-800">Cargar CSV o XLSX</p>
-                <p id="fileName" class="mt-1 break-words text-[11px] font-medium text-blue-700">Ningún archivo cargado</p>
-                <p class="text-[10px] leading-4 text-slate-500">Arrastra o selecciona el archivo.</p>
-              </div>
-              <label class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-within:ring-4 focus-within:ring-blue-100">
-                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 16V4M7 9l5-5 5 5M4 20h16" />
-                </svg>
-                Seleccionar archivo
-                <input id="fileInput" type="file" accept=".csv,.xlsx,.xls" class="sr-only" />
-              </label>
-            </div>
-          </div>
-
           <div class="space-y-3">
             <div class="flex items-center gap-2">
               <span class="h-px flex-1 bg-slate-200"></span>
@@ -526,8 +540,8 @@
           <div class="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-blue-50 text-blue-700">
             <svg viewBox="0 0 24 24" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" /></svg>
           </div>
-          <h2 class="mt-5 text-xl font-semibold text-slate-800">Carga un archivo para iniciar</h2>
-          <p class="mt-2 text-sm leading-6 text-slate-500">El dashboard permanecerá vacío hasta que selecciones un archivo CSV, XLSX o XLS.</p>
+          <h2 class="mt-5 text-xl font-semibold text-slate-800">Preparando dashboard</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-500">La información se cargará automáticamente al abrir la página.</p>
         </div>
       </section>
 
@@ -1380,6 +1394,31 @@
       return `${selected.length} seleccionados`;
     }
 
+    function positionCompactMultiSelect(details) {
+      if (!details || !details.open) return;
+      const summary = details.querySelector("summary");
+      const menu = details.querySelector(".compact-multiselect-menu");
+      if (!summary || !menu) return;
+
+      const rect = summary.getBoundingClientRect();
+      const viewportPadding = 8;
+      const preferredHeight = Math.min(menu.scrollHeight || 320, 320);
+      const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+      const spaceAbove = rect.top - viewportPadding;
+      const openAbove = spaceBelow < Math.min(preferredHeight, 180) && spaceAbove > spaceBelow;
+      const availableHeight = Math.max(120, openAbove ? spaceAbove - 6 : spaceBelow - 6);
+      const width = Math.min(Math.max(rect.width, 190), window.innerWidth - viewportPadding * 2);
+      const left = Math.min(Math.max(viewportPadding, rect.left), window.innerWidth - width - viewportPadding);
+      const top = openAbove
+        ? Math.max(viewportPadding, rect.top - Math.min(preferredHeight, availableHeight) - 6)
+        : Math.min(window.innerHeight - viewportPadding - 120, rect.bottom + 6);
+
+      details.style.setProperty("--menu-left", `${left}px`);
+      details.style.setProperty("--menu-top", `${top}px`);
+      details.style.setProperty("--menu-width", `${width}px`);
+      menu.style.maxHeight = `${availableHeight}px`;
+    }
+
     function renderCompactMultiSelect(selectId) {
       const select = document.getElementById(selectId);
       if (!select) return;
@@ -1404,6 +1443,15 @@
               <span>${escapeHtml(option.textContent)}</span>
             </label>`).join("")}
         </div>`;
+      details.addEventListener("toggle", () => {
+        if (details.open) {
+          document.querySelectorAll("details.compact-multiselect[open]").forEach(other => {
+            if (other !== details) other.removeAttribute("open");
+          });
+          requestAnimationFrame(() => positionCompactMultiSelect(details));
+        }
+      }, { once: true });
+
       details.querySelectorAll("input[data-option-index]").forEach(input => {
         input.addEventListener("change", () => {
           const option = select.options[Number(input.dataset.optionIndex)];
@@ -2364,7 +2412,7 @@ ${total ? (value / total * 100).toFixed(1) : "0.0"}%`
       document.getElementById("resetFilters").disabled = !loaded;
       document.getElementById("startDate").disabled = !loaded;
       document.getElementById("endDate").disabled = !loaded;
-      document.querySelectorAll("#controlSidebar input:not(#fileInput), #controlSidebar select").forEach(control => control.disabled = !loaded);
+      document.querySelectorAll("#controlSidebar input, #controlSidebar select").forEach(control => control.disabled = !loaded);
       if (loaded) setDashboardView(state.currentView);
     }
 
@@ -2405,7 +2453,6 @@ ${total ? (value / total * 100).toFixed(1) : "0.0"}%`
       document.getElementById("startDate").max = toDateInputValue(state.maxDate);
       document.getElementById("endDate").min = toDateInputValue(state.minDate);
       document.getElementById("endDate").max = toDateInputValue(state.maxDate);
-      document.getElementById("fileName").textContent = `Fuente actual: ${sourceName}`;
       populateFilterOptions(normalized);
       setDashboardLoaded(true);
       updateDashboard();
@@ -2454,37 +2501,13 @@ ${total ? (value / total * 100).toFixed(1) : "0.0"}%`
       throw new Error("El libro no contiene hojas con registros.");
     }
 
-    async function handleFile(file) {
-      if (!file) return;
-      const extension = file.name.split(".").pop().toLowerCase();
-      if (!["csv", "xlsx", "xls"].includes(extension)) {
-        setSystemStatus("Formato no admitido", "error");
-        alert("Selecciona un archivo CSV, XLSX o XLS.");
-        return;
-      }
-
-      try {
-        setSystemStatus(`Procesando ${file.name}...`, "loading");
-        const rows = extension === "csv" ? await parseCsvFile(file) : await parseExcelFile(file);
-        initializeDataset(rows, file.name);
-        setSystemStatus(`${numberFormat.format(state.normalizedRows.length)} registros cargados`);
-      } catch (error) {
-        console.error(error);
-        setSystemStatus("Error al cargar el archivo", "error");
-        alert(`No se pudo procesar el archivo:\n\n${error.message}`);
-      } finally {
-        document.getElementById("fileInput").value = "";
-      }
-    }
-
     async function loadAutomaticDataFile() {
       const automaticFileName = "datos_dashboard.xlsx";
 
       if (window.location.protocol === "file:") {
         setSystemStatus("Abre el dashboard desde su dirección web", "error");
-        document.getElementById("fileName").textContent = `Archivo automático esperado: ${automaticFileName}`;
         document.querySelector("#emptyDashboardState p").textContent =
-          `Para cargar ${automaticFileName} automáticamente, abre esta carpeta mediante HTTP/HTTPS. También puedes seleccionarlo manualmente.`;
+          `Para cargar ${automaticFileName} automáticamente, abre esta carpeta mediante HTTP/HTTPS.`;
         return;
       }
 
@@ -2505,9 +2528,8 @@ ${total ? (value / total * 100).toFixed(1) : "0.0"}%`
       } catch (error) {
         console.warn(`No se pudo cargar automáticamente ${automaticFileName}:`, error);
         setDashboardLoaded(false);
-        document.getElementById("fileName").textContent = `Archivo automático esperado: ${automaticFileName}`;
         document.querySelector("#emptyDashboardState p").textContent =
-          `No se encontró ${automaticFileName} en la misma carpeta. Colócalo junto al dashboard o selecciónalo manualmente.`;
+          `No se encontró ${automaticFileName} en la misma carpeta. Colócalo junto al dashboard.`;
         setSystemStatus("Archivo automático no encontrado", "error");
       }
     }
@@ -2580,23 +2602,6 @@ ${error.message}`);
        EVENTOS DE INTERFAZ
        ================================================================ */
 
-    document.getElementById("fileInput").addEventListener("change", event => handleFile(event.target.files[0]));
-
-    const dropZone = document.getElementById("dropZone");
-    ["dragenter", "dragover"].forEach(eventName => {
-      dropZone.addEventListener(eventName, event => {
-        event.preventDefault();
-        dropZone.classList.add("dragover");
-      });
-    });
-    ["dragleave", "drop"].forEach(eventName => {
-      dropZone.addEventListener(eventName, event => {
-        event.preventDefault();
-        dropZone.classList.remove("dragover");
-      });
-    });
-    dropZone.addEventListener("drop", event => handleFile(event.dataTransfer.files[0]));
-
     document.getElementById("startDate").addEventListener("change", updateDashboard);
     document.getElementById("endDate").addEventListener("change", updateDashboard);
 
@@ -2651,6 +2656,14 @@ ${error.message}`);
         if (!details.contains(event.target)) details.removeAttribute("open");
       });
     });
+
+    window.addEventListener("resize", () => {
+      document.querySelectorAll("details.compact-multiselect[open]").forEach(positionCompactMultiSelect);
+      requestAnimationFrame(() => Object.values(state.charts).forEach(chart => chart?.resize()));
+    });
+    document.addEventListener("scroll", () => {
+      document.querySelectorAll("details.compact-multiselect[open]").forEach(positionCompactMultiSelect);
+    }, true);
 
     window.addEventListener("error", event => {
       if (/Script error|tailwind|Chart|Papa|XLSX/i.test(String(event.message))) {
