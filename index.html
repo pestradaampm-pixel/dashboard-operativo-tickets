@@ -244,7 +244,8 @@
     #controlSidebar .panel { box-shadow: 0 16px 40px rgba(15, 23, 42, .075); }
     #controlSidebar select { text-overflow: ellipsis; }
     #dashboardWorkspace.sidebar-hidden { grid-template-columns: minmax(0, 1fr) !important; }
-    #dashboardWorkspace.sidebar-hidden #controlSidebar { display: none !important; }
+    #dashboardWorkspace.sidebar-hidden #controlSidebar,
+    #dashboardWorkspace.sidebar-hidden #sidebarResizer { display: none !important; }
     #showSidebarButton.hidden { display: none !important; }
     #dashboardExportArea { min-width: 0; }
     @media (min-width: 1280px) {
@@ -374,16 +375,50 @@
 
     /* Ajuste automático para cualquier tamaño de pantalla. */
     #dashboardLayout { overflow-x: clip; }
-    #dashboardWorkspace { align-items: start; }
+    #dashboardWorkspace { align-items: start; --sidebar-width: clamp(15rem, 19vw, 19rem); }
     #controlSidebar, #dashboardMain, #dashboardExportArea { min-width: 0; }
+    #sidebarResizer { display: none; }
     header .flex { min-width: 0; }
 
     @media (min-width: 1024px) {
-      #dashboardWorkspace { grid-template-columns: clamp(15rem, 19vw, 19rem) minmax(0, 1fr); }
+      #dashboardWorkspace {
+        grid-template-columns: var(--sidebar-width) .55rem minmax(0, 1fr);
+        gap: .45rem;
+      }
+      #sidebarResizer {
+        display: block;
+        align-self: stretch;
+        min-height: calc(100vh - 9rem);
+        cursor: col-resize;
+        touch-action: none;
+        border-radius: 999px;
+        background: transparent;
+        position: relative;
+      }
+      #sidebarResizer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 3px;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: #cbd5e1;
+        transition: width .15s ease, background-color .15s ease;
+      }
+      #sidebarResizer:hover::before,
+      #sidebarResizer.resizing::before { width: 5px; background: #3b82f6; }
+      html.dark #sidebarResizer::before { background: #475569; }
+      html.dark #sidebarResizer:hover::before,
+      html.dark #sidebarResizer.resizing::before { background: #60a5fa; }
+      body.sidebar-resizing { cursor: col-resize !important; user-select: none !important; }
+      body.sidebar-resizing * { cursor: col-resize !important; }
     }
 
     @media (max-width: 1023px) {
-      #dashboardWorkspace { grid-template-columns: minmax(0, 1fr); }
+      #dashboardWorkspace { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+      #sidebarResizer { display: none !important; }
       #controlSidebar { position: static !important; max-height: none !important; overflow: visible !important; padding-right: 0 !important; }
       #controlSidebar .panel { overflow: visible; }
       #controlSidebar .space-y-3 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
@@ -482,7 +517,6 @@
               <span class="text-[10px] font-semibold uppercase tracking-[.16em] text-slate-400">Filtros</span>
               <span class="h-px flex-1 bg-slate-200"></span>
             </div>
-            <p class="text-[10px] leading-4 text-slate-400">Puedes seleccionar varias opciones. Sin selección se muestran todos.</p>
 
             <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">
               <label class="block">
@@ -534,6 +568,8 @@
       </section>
     </aside>
 
+    <div id="sidebarResizer" role="separator" aria-orientation="vertical" aria-label="Ajustar ancho del panel de control" title="Arrastra para ajustar el ancho del panel"></div>
+
     <main id="dashboardMain" class="min-w-0 space-y-5">
       <section id="emptyDashboardState" class="panel grid min-h-[28rem] place-items-center p-8 text-center">
         <div class="max-w-md">
@@ -551,7 +587,6 @@
       <article class="panel kpi-card p-5">
         <div class="relative z-10 flex items-start justify-between gap-4">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 1 · KPI</p>
             <h2 class="mt-2 text-sm font-medium text-slate-700">Volumen total de tickets</h2>
             <p id="kpiTickets" class="mt-3 text-4xl font-semibold tracking-tight text-slate-950">0</p>
           </div>
@@ -566,7 +601,6 @@
       <article class="panel kpi-card p-5">
         <div class="relative z-10 flex items-start justify-between gap-4">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 2 · KPI</p>
             <h2 class="mt-2 text-sm font-medium text-slate-700">Total costo paquete MXN</h2>
             <p id="kpiTotalCost" class="mt-3 text-4xl font-semibold tracking-tight text-slate-950">$0</p>
           </div>
@@ -582,11 +616,10 @@
       <section class="panel flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Vista del dashboard</p>
-          <p class="mt-1 text-sm text-slate-600">Separa el resumen de las tablas de detalle.</p>
         </div>
         <div class="inline-flex rounded-xl bg-slate-100 p-1" role="tablist" aria-label="Vistas del dashboard">
-          <button id="overviewViewButton" type="button" class="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-blue-700 shadow-sm" aria-selected="true">Resumen · Gráficos 1–13</button>
-          <button id="detailViewButton" type="button" class="rounded-lg px-4 py-2 text-xs font-semibold text-slate-600" aria-selected="false">Detalle · Gráficos 14–15</button>
+          <button id="overviewViewButton" type="button" class="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-blue-700 shadow-sm" aria-selected="true">Resumen</button>
+          <button id="detailViewButton" type="button" class="rounded-lg px-4 py-2 text-xs font-semibold text-slate-600" aria-selected="false">Detalle</button>
         </div>
       </section>
 
@@ -594,7 +627,6 @@
     <section id="chartsGrid" class="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
       <article id="chart3Card" data-dashboard-view="overview" class="panel chart-card p-4 sm:p-5 lg:col-span-2 xl:col-span-2">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 3</p>
           <h2 class="mt-1 font-semibold text-slate-800">Tendencia semanal de tickets</h2>
         </div>
         <div class="chart-wrap tall"><canvas id="weeklyTrendChart"></canvas></div>
@@ -602,7 +634,6 @@
 
       <article class="panel chart-card p-4 sm:p-5" data-dashboard-view="overview">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 4</p>
           <h2 class="mt-1 font-semibold text-slate-800">Distribución de tickets por estado</h2>
         </div>
         <div class="chart-wrap tall"><canvas id="statusChart"></canvas></div>
@@ -610,7 +641,6 @@
 
       <article class="panel chart-card p-4 sm:p-5" data-dashboard-view="overview">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 5</p>
           <h2 class="mt-1 font-semibold text-slate-800">Top 10 agentes asignados</h2>
         </div>
         <div class="chart-wrap"><canvas id="agentChart"></canvas></div>
@@ -618,7 +648,6 @@
 
       <article id="chart6Card" data-dashboard-view="overview" class="panel chart-card p-4 sm:p-5 lg:col-span-2 xl:col-span-2">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 6</p>
           <h2 class="mt-1 font-semibold text-slate-800">Respuesta Cedis: extravío vs. pendiente</h2>
         </div>
         <div class="chart-wrap tall"><canvas id="responseCedisChart"></canvas></div>
@@ -626,7 +655,6 @@
 
       <article class="panel chart-card p-4 sm:p-5" data-dashboard-view="overview">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 7</p>
           <h2 class="mt-1 font-semibold text-slate-800">Top 5 subcategorías por volumen</h2>
         </div>
         <div class="chart-wrap"><canvas id="categoriesChart"></canvas></div>
@@ -634,7 +662,6 @@
 
       <article class="panel chart-card p-4 sm:p-5" data-dashboard-view="overview">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 8</p>
           <h2 class="mt-1 font-semibold text-slate-800">Distribución por estado del ticket</h2>
         </div>
         <div class="chart-wrap"><canvas id="resolutionChart"></canvas></div>
@@ -642,7 +669,6 @@
 
       <article class="panel chart-card p-4 sm:p-5" data-dashboard-view="overview">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 9</p>
           <h2 class="mt-1 font-semibold text-slate-800">Productividad por día de la semana</h2>
         </div>
         <div class="chart-wrap compact"><canvas id="weekdayChart"></canvas></div>
@@ -650,7 +676,6 @@
 
       <article class="panel chart-card p-4 sm:p-5" data-dashboard-view="overview">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 10</p>
           <h2 class="mt-1 font-semibold text-slate-800">Top 5 áreas solicitantes</h2>
         </div>
         <div class="chart-wrap"><canvas id="areaChart"></canvas></div>
@@ -658,7 +683,6 @@
 
       <article class="panel chart-card p-4 sm:p-5" data-dashboard-view="overview">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 11</p>
           <h2 class="mt-1 font-semibold text-slate-800">Top 10 clientes</h2>
         </div>
         <div class="chart-wrap"><canvas id="clientChart"></canvas></div>
@@ -666,7 +690,6 @@
 
       <article class="panel chart-card p-4 sm:p-5" data-dashboard-view="overview">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 13</p>
           <h2 class="mt-1 font-semibold text-slate-800">Respuesta Cedis</h2>
         </div>
         <div class="chart-wrap tall"><canvas id="responseByAgentChart"></canvas></div>
@@ -674,7 +697,6 @@
 
       <article id="chart12Card" data-dashboard-view="overview" class="panel chart-card p-4 sm:p-5 lg:col-span-2 xl:col-span-3">
         <div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 12</p>
           <h2 class="mt-1 font-semibold text-slate-800">Top 10 plazas y porcentaje de extravíos</h2>
         </div>
         <div class="chart-wrap tall"><canvas id="plazaChart"></canvas></div>
@@ -683,7 +705,6 @@
       <article id="pendingPivotSection" data-dashboard-view="detail" class="panel overflow-hidden lg:col-span-2 xl:col-span-3">
         <div class="flex flex-col gap-2 border-b border-slate-200 p-4 sm:flex-row sm:items-end sm:justify-between sm:p-5">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 14 · Tabla dinámica</p>
             <h2 class="mt-1 font-semibold text-slate-800">Tickets pendientes por agente y días de atraso</h2>
           </div>
           <p id="pendingPivotMeta" class="text-sm font-medium text-slate-500">0 tickets pendientes</p>
@@ -700,7 +721,6 @@
       <article id="recordsSection" data-dashboard-view="detail" class="panel overflow-hidden lg:col-span-2 xl:col-span-3">
         <div class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[.14em] text-slate-500">Gráfico 15</p>
             <h2 class="mt-1 font-semibold text-slate-800">Últimos 10 registros</h2>
           </div>
           <label class="relative block w-full sm:w-72">
@@ -2598,6 +2618,58 @@ ${error.message}`);
       requestAnimationFrame(() => Object.values(state.charts).forEach(chart => chart?.resize()));
     }
 
+    function initializeSidebarResizer() {
+      const workspace = document.getElementById("dashboardWorkspace");
+      const resizer = document.getElementById("sidebarResizer");
+      const desktopQuery = window.matchMedia("(min-width: 1024px)");
+      const storageKey = "dashboardSidebarWidth";
+      const minWidth = 220;
+
+      const applyWidth = width => {
+        const maxWidth = Math.max(minWidth, Math.min(520, window.innerWidth * 0.46));
+        const safeWidth = Math.max(minWidth, Math.min(Number(width) || 272, maxWidth));
+        workspace.style.setProperty("--sidebar-width", `${safeWidth}px`);
+        return safeWidth;
+      };
+
+      const savedWidth = Number(localStorage.getItem(storageKey));
+      if (savedWidth) applyWidth(savedWidth);
+
+      resizer.addEventListener("pointerdown", event => {
+        if (!desktopQuery.matches || workspace.classList.contains("sidebar-hidden")) return;
+        event.preventDefault();
+        resizer.setPointerCapture(event.pointerId);
+        resizer.classList.add("resizing");
+        document.body.classList.add("sidebar-resizing");
+      });
+
+      resizer.addEventListener("pointermove", event => {
+        if (!resizer.hasPointerCapture(event.pointerId)) return;
+        const workspaceLeft = workspace.getBoundingClientRect().left;
+        applyWidth(event.clientX - workspaceLeft);
+        requestAnimationFrame(() => Object.values(state.charts).forEach(chart => chart?.resize()));
+      });
+
+      const finishResize = event => {
+        if (resizer.hasPointerCapture(event.pointerId)) resizer.releasePointerCapture(event.pointerId);
+        resizer.classList.remove("resizing");
+        document.body.classList.remove("sidebar-resizing");
+        const width = parseFloat(getComputedStyle(workspace).getPropertyValue("--sidebar-width"));
+        if (width) localStorage.setItem(storageKey, String(Math.round(width)));
+        requestAnimationFrame(() => Object.values(state.charts).forEach(chart => chart?.resize()));
+      };
+
+      resizer.addEventListener("pointerup", finishResize);
+      resizer.addEventListener("pointercancel", finishResize);
+
+      window.addEventListener("resize", () => {
+        if (desktopQuery.matches) {
+          const current = parseFloat(getComputedStyle(workspace).getPropertyValue("--sidebar-width"));
+          if (current) applyWidth(current);
+        }
+      });
+    }
+
     /* ================================================================
        EVENTOS DE INTERFAZ
        ================================================================ */
@@ -2673,6 +2745,7 @@ ${error.message}`);
 
     /* Carga automática desde datos_dashboard.xlsx cuando se abre por HTTP/HTTPS. */
     syncThemeToggle();
+    initializeSidebarResizer();
     applyChartThemeDefaults();
     setDashboardLoaded(false);
     setDashboardView("overview");
